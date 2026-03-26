@@ -14,6 +14,8 @@ You can run your application in dev mode that enables live coding using:
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
 
+> **_NOTE_:** Suggested to verify that the User Service can successfully authenticate with Keycloak and access the protected endpoint – see the "Verifying the setup" section below.
+
 ## Packaging and running the application
 
 The application can be packaged using:
@@ -52,6 +54,51 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 You can then execute your native executable with: `./target/user-service-1.0.0-SNAPSHOT-runner`
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+
+
+## Verifying the setup
+
+**Prerequisite**: run Keycloak locally (see the `glow-devops` repo's README.md for instructions), and run the user service in dev mode using `./mvnw quarkus:dev` in the `glow-user-service` directory.
+
+To verify that the User Service can successfully authenticate with Keycloak and access the protected endpoint, run the following command based on your operating system:
+
+### Windows (PowerShell)
+
+```powershell
+$tokenResponse = curl.exe -s -X POST "http://localhost:8080/realms/glow-realm/protocol/openid-connect/token" `
+  -H "Content-Type: application/x-www-form-urlencoded" `
+  -d "grant_type=password" `
+  -d "client_id=glow-frontend" `
+  -d "username=testcustomer" `
+  -d "password=test123"
+
+$accessToken = ($tokenResponse | ConvertFrom-Json).access_token
+
+curl.exe -i "http://localhost:8081/users/me" `
+  -H "Authorization: Bearer $accessToken"
+```
+
+### macOS
+
+(Make sure to have `python3` installed for parsing the JSON response; or copy the access token manually from the response into the curl command below)
+
+```bash
+token_response=$(curl -s -X POST "http://localhost:8080/realms/glow-realm/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=glow-frontend" \
+  -d "username=testcustomer" \
+  -d "password=test123")
+
+access_token=$(printf '%s' "$token_response" | python3 -c 'import sys, json; print(json.load(sys.stdin)["access_token"])')
+
+curl -i "http://localhost:8081/users/me" \
+  -H "Authorization: Bearer $access_token"
+```
+
+You should see a response with HTTP status code `200 OK` and a JSON body containing the user's information, confirming that the User Service is properly set up and can authenticate with Keycloak. Accessing the protected endpoint without a valid access token should result in a `401 Unauthorized` response.
+
+If you encounter other issues, please check the logs of both Keycloak and the User Service for troubleshooting.
 
 ## Related Guides
 
