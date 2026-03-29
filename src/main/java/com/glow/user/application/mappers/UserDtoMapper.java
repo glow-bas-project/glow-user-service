@@ -58,7 +58,7 @@ public class UserDtoMapper {
     }
 
     private User.Builder resolveBuilder(UserDto dto) {
-        if (!dto.savedAddresses().isEmpty()) {
+        if (dto.savedAddresses() != null && !dto.savedAddresses().isEmpty()) {
             return CustomerUser.builder().savedAddresses(dto.savedAddresses());
         }
 

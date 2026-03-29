@@ -30,6 +30,12 @@ public class UserRepositoryService implements UserRepository {
     }
 
     @Override
+    @Transactional
+    public void update(User user) {
+        repository.getEntityManager().merge(mapper.toEntity(user));
+    }
+
+    @Override
     public Optional<User> findById(String id) {
         return repository.findByIdOptional(id)
             .map(mapper::toDomain);

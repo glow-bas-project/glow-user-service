@@ -1,6 +1,7 @@
 package com.glow.user.application.services;
 
 import com.glow.user.application.api.model.CreateUserRequest;
+import com.glow.user.application.api.model.UpdateUserRequest;
 import com.glow.user.application.common.PageRequest;
 import com.glow.user.application.common.PageResult;
 import com.glow.user.application.mappers.UserDtoMapper;
@@ -13,6 +14,7 @@ import jakarta.ws.rs.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,10 +78,70 @@ public class UserService {
         return User.builder();
     }
 
+    private User.Builder resolveBuilderForUpdate(UpdateUserRequest request, User existing,
+                                                 List<Permission> permissions) {
+        if (permissions.contains(Permission.CUSTOMER)) {
+            List<Address> addresses = request.savedAddresses() != null
+                ? request.savedAddresses()
+                : (existing instanceof CustomerUser customerUser ? customerUser.getSavedAddresses() : List.of());
+
+            return CustomerUser.builder().savedAddresses(addresses);
+        }
+
+        if (permissions.contains(Permission.COURIER)) {
+            VehicleType vehicleType = request.vehicleType() != null
+                ? request.vehicleType()
+                : (existing instanceof CourierUser courierUser ? courierUser.getVehicleType() : null);
+
+            return CourierUser.builder()
+                .vehicleType(vehicleType)
+                .stripeAccountId(existing instanceof CourierUser courierUser
+                    ? courierUser.getStripeAccountId() : null)
+                .stripeOnboardingComplete(existing instanceof CourierUser courierUser
+                    ? courierUser.getStripeOnboardingComplete() : null);
+        }
+
+        if (permissions.contains(Permission.RESTAURANT_USER)) {
+            UUID restaurantId = null;
+
+            if (request.restaurantId() != null && !request.restaurantId().isBlank()) {
+                restaurantId = UUID.fromString(request.restaurantId());
+            } else if (existing instanceof RestaurantUser restaurantUser) {
+                restaurantId = restaurantUser.getRestaurantId();
+            }
+
+            return RestaurantUser.builder().restaurantId(restaurantId);
+        }
+
+        return User.builder();
+    }
+
     public UserDto findById(String id) {
         return mapper.toDto(
             userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User with id " + id + " not found")));
+    }
+
+    public UserDto updateUser(String id, UpdateUserRequest request) {
+        var existing = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+
+        var permissions = request.permissions() == null ? existing.getPermissions() : request.permissions();
+
+        User.Builder builder = resolveBuilderForUpdate(request, existing, permissions);
+        builder.id(existing.getId());
+        builder.createdAt(existing.getCreatedAt());
+        builder.updatedAt(Instant.now());
+        builder.keycloakId(existing.getKeycloakId());
+        builder.name(request.name() == null ? existing.getName() : request.name());
+        builder.phoneNumber(request.phoneNumber() == null ? existing.getPhoneNumber() : request.phoneNumber());
+        builder.email(request.email() == null ? existing.getEmail() : request.email());
+        builder.permissions(permissions);
+
+        var updated = builder.build();
+        userRepository.update(updated);
+
+        return mapper.toDto(updated);
     }
 
     public PageResult<String> findUserIds(int size, int page) {
