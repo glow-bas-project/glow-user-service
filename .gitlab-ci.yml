@@ -1,0 +1,4 @@
+include:
+  - project: "backend-architecture-and-scalability/glow-devops"
+    ref: "main"
+    file: "/.gitlab/ci/entry/service-pipeline.yml"
