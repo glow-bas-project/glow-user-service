@@ -50,6 +50,11 @@ public class UserRepositoryService implements UserRepository {
     }
 
     @Override
+    public boolean existsByKeycloakId(String keycloakId) {
+        return repository.existsByKeycloakId(keycloakId);
+    }
+
+    @Override
     public PageResult<String> findIds(PageRequest pageRequest) {
         var result = repository.findIds(pageRequest);
 

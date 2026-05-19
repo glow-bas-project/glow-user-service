@@ -1,6 +1,5 @@
 package com.glow.user.infrastructure.services;
 
-import com.glow.user.domain.model.Permission;
 import com.glow.user.domain.model.User;
 import com.glow.user.domain.repository.UserRepository;
 import com.glow.user.domain.shared.PageRequest;

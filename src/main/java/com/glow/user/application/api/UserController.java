@@ -4,9 +4,12 @@ import com.glow.user.application.api.model.CreateUserRequest;
 import com.glow.user.application.api.model.FindUserIdsRequest;
 import com.glow.user.application.api.model.FindUserIdsResponse;
 import com.glow.user.application.api.model.MaterialiseUsersByIdsRequest;
+import com.glow.user.application.api.model.ProfileSyncRequest;
 import com.glow.user.application.api.model.UpdateUserRequest;
 import com.glow.user.application.model.UserDto;
 import com.glow.user.application.services.UserService;
+import com.glow.user.domain.shared.GlowRoles;
+import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.*;
@@ -36,28 +39,49 @@ public class UserController {
     }
 
     @POST
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @Path("sync-profile")
+    @Authenticated
+    public RestResponse<UserDto> syncProfile(ProfileSyncRequest request) {
+        return RestResponse.ok(service.syncUserProfile(jwt.getSubject(), resolveEmailClaim(), request));
+    }
+
+    private String resolveEmailClaim() {
+        Object email = jwt.getClaim("email");
+        if (email != null && !email.toString().isBlank()) {
+            return email.toString();
+        }
+
+        Object preferredUsername = jwt.getClaim("preferred_username");
+        if (preferredUsername != null && !preferredUsername.toString().isBlank()) {
+            return preferredUsername.toString();
+        }
+
+        return null;
+    }
+
+    @POST
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<UserDto> createUser(CreateUserRequest request) {
         return RestResponse.ok(service.createUser(request, jwt.getSubject()));
     }
 
     @GET
     @Path("{id}")
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<UserDto> findById(@PathParam("id") String id) {
         return RestResponse.ok(service.findById(id));
     }
 
     @PUT
     @Path("{id}")
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<UserDto> updateById(@PathParam("id") String id, UpdateUserRequest request) {
         return RestResponse.ok(service.updateUser(id, request));
     }
 
     @POST
     @Path("find")
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<FindUserIdsResponse> findUsers(FindUserIdsRequest request) {
         var result = service.findUserIds(request.size(), request.page());
 
@@ -69,14 +93,14 @@ public class UserController {
 
     @POST
     @Path("materialise")
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<List<UserDto>> materialiseUsers(MaterialiseUsersByIdsRequest request) {
         return RestResponse.ok(service.materialise(request.ids()));
     }
 
     @DELETE
     @Path("{id}")
-    @RolesAllowed({"CUSTOMER", "COURIER", "RESTAURANT_USER", "SYSADMIN"})
+    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
     public RestResponse<Void> deleteById(@PathParam("id") String id) {
         boolean deleted = service.deleteUserById(id);
         return deleted ? RestResponse.noContent() : RestResponse.status(RestResponse.Status.NOT_FOUND);
