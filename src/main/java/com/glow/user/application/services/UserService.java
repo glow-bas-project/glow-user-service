@@ -1,6 +1,7 @@
 package com.glow.user.application.services;
 
 import com.glow.user.application.api.model.CreateUserRequest;
+import com.glow.user.application.api.model.ProfileSyncRequest;
 import com.glow.user.application.api.model.UpdateUserRequest;
 import com.glow.user.domain.shared.PageRequest;
 import com.glow.user.domain.shared.PageResult;
@@ -12,8 +13,6 @@ import com.glow.user.domain.shared.DomainException;
 import com.glow.user.domain.shared.DomainPrecondition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,8 +20,6 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class UserService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 
     private static final List<Permission> PROFILE_PERMISSIONS = List.of(
         Permission.CUSTOMER,
@@ -37,10 +34,68 @@ public class UserService {
         this.mapper = mapper;
     }
 
+    public void ensureUserExists(String keycloakSubject, String email) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
+        var keycloakId = resolveKeycloakId(keycloakSubject);
+        var existingUser = userRepository.findByKeycloakId(keycloakId.toString());
+        if (existingUser.isPresent()) {
+            return;
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            return;
+        }
+
+        var user = User.builder()
+            .keycloakId(keycloakId)
+            .name(email)
+            .email(email)
+            .phoneNumber(null)
+            .permissions(List.of())
+            .build();
+
+        userRepository.save(user);
+    }
+
+    public UserDto syncUserProfile(String keycloakSubject, String email, ProfileSyncRequest request) {
+        if (email == null || email.isBlank()) {
+            throw new DomainException("User email claim is required");
+        }
+
+        var keycloakId = resolveKeycloakId(keycloakSubject);
+        var existingUser = userRepository.findByKeycloakId(keycloakId.toString());
+        if (existingUser.isPresent()) {
+            return mapper.toDto(existingUser.get());
+        }
+
+        var createUserRequest = new CreateUserRequest(
+            request.name(),
+            request.phoneNumber(),
+            email,
+            request.permissions(),
+            request.savedAddresses(),
+            request.vehicleType(),
+            request.courierAvailability(),
+            request.restaurantId());
+
+        return createUser(createUserRequest, keycloakSubject);
+    }
+
     public UserDto createUser(CreateUserRequest request, String keycloakSubject) {
         var permissions = request.permissions() == null ? List.<Permission>of() : request.permissions();
         validatePermissionCombination(permissions);
         var keycloakId = resolveKeycloakId(keycloakSubject);
+
+        if (userRepository.existsByKeycloakId(keycloakId.toString())) {
+            throw new DomainException("User with keycloakId " + keycloakId + " already exists");
+        }
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new DomainException("User with email " + request.email() + " already exists");
+        }
 
         User.Builder builder = resolveBuilder(request, permissions);
         builder.keycloakId(keycloakId);

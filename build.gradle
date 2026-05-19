@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'maven-publish'
 }
 
 repositories {
@@ -61,4 +62,27 @@ compileJava {
 
 compileTestJava {
     options.encoding = 'UTF-8'
+}
+
+def ciApiV4Url = System.getenv('CI_API_V4_URL')
+def ciProjectId = System.getenv('CI_PROJECT_ID')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        if (ciApiV4Url && ciProjectId) {
+            maven {
+                name = 'gitlab'
+                url = uri("${ciApiV4Url}/projects/${ciProjectId}/packages/maven")
+                credentials {
+                    username = 'gitlab-ci-token'
+                    password = System.getenv('CI_JOB_TOKEN')
+                }
+            }
+        }
+    }
 }

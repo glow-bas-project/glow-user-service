@@ -18,5 +18,6 @@ public interface UserRepository {
     List<User> findByIds(List<String> ids);
 
     boolean existsByEmail(String email);
+    boolean existsByKeycloakId(String keycloakId);
     boolean deleteById(String id);
 }

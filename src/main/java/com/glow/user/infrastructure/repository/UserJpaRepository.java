@@ -36,4 +36,8 @@ public class UserJpaRepository implements PanacheRepositoryBase<UserJpaEntity, S
     public boolean existsByEmail(String email) {
         return count("email", email) > 0;
     }
+
+    public boolean existsByKeycloakId(String keycloakId) {
+        return count("keycloakId", keycloakId) > 0;
+    }
 }
