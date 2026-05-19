@@ -86,3 +86,7 @@ publishing {
         }
     }
 }
+
+tasks.withType(org.gradle.api.publish.tasks.GenerateModuleMetadata).configureEach {
+    suppressedValidationErrors.add('enforced-platform')
+}
