@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS courier_users (
     id VARCHAR(36) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     vehicle_type VARCHAR(50),
     courier_availability VARCHAR(50),
+    courier_transfer_id VARCHAR(255),
     stripe_account_id VARCHAR(255),
     stripe_onboarding_complete BOOLEAN DEFAULT FALSE
 );

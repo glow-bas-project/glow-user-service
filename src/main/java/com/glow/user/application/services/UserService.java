@@ -170,6 +170,8 @@ public class UserService {
             return CourierUser.builder()
                 .vehicleType(vehicleType)
                 .courierAvailability(courierAvailability)
+                .courierTransferId(existing instanceof CourierUser courierUser
+                    ? courierUser.getCourierTransferId() : null)
                 .stripeAccountId(existing instanceof CourierUser courierUser
                     ? courierUser.getStripeAccountId() : null)
                 .stripeOnboardingComplete(existing instanceof CourierUser courierUser
