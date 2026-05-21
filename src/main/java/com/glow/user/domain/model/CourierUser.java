@@ -10,6 +10,7 @@ public class CourierUser extends User {
 
     private final VehicleType vehicleType;
     private final CourierAvailability courierAvailability;
+    private final String courierTransferId;
     private final String stripeAccountId;
     private final Boolean stripeOnboardingComplete;
 
@@ -18,6 +19,7 @@ public class CourierUser extends User {
         this.vehicleType = DomainPrecondition.requireNonNull(builder.vehicleType,
             "Courier vehicle type cannot be null");
         this.courierAvailability = builder.courierAvailability;
+        this.courierTransferId = builder.courierTransferId;
         this.stripeAccountId = builder.stripeAccountId;
         this.stripeOnboardingComplete = builder.stripeOnboardingComplete;
     }
@@ -34,6 +36,10 @@ public class CourierUser extends User {
         return courierAvailability;
     }
 
+    public String getCourierTransferId() {
+        return courierTransferId;
+    }
+
     public String getStripeAccountId() {
         return stripeAccountId;
     }
@@ -45,6 +51,7 @@ public class CourierUser extends User {
     public static class Builder extends User.Builder {
         private VehicleType vehicleType;
         private CourierAvailability courierAvailability;
+        private String courierTransferId;
         private String stripeAccountId;
         private Boolean stripeOnboardingComplete;
 
@@ -105,6 +112,9 @@ public class CourierUser extends User {
         public Builder courierAvailability(CourierAvailability courierAvailability) {
             this.courierAvailability = courierAvailability; return this;
         }
+        public Builder courierTransferId(String courierTransferId) {
+            this.courierTransferId = courierTransferId; return this;
+        }
         public Builder stripeAccountId(String stripeAccountId) {
             this.stripeAccountId = stripeAccountId; return this;
         }
@@ -118,6 +128,10 @@ public class CourierUser extends User {
 
         public CourierAvailability getCourierAvailability() {
             return courierAvailability;
+        }
+
+        public String getCourierTransferId() {
+            return courierTransferId;
         }
 
         public String getStripeAccountId() {
@@ -134,6 +148,10 @@ public class CourierUser extends User {
 
         public void setCourierAvailability(CourierAvailability a) {
             this.courierAvailability = a;
+        }
+
+        public void setCourierTransferId(String courierTransferId) {
+            this.courierTransferId = courierTransferId;
         }
 
         public void setStripeAccountId(String s) {

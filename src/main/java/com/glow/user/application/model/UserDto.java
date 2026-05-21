@@ -16,5 +16,6 @@ public record UserDto(
     List<Address> savedAddresses,
     VehicleType vehicleType,
     CourierAvailability courierAvailability,
+    String courierTransferId,
     String restaurantId) {
 }

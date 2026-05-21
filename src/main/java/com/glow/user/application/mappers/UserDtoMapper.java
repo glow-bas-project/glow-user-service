@@ -26,6 +26,7 @@ public class UserDtoMapper {
         var savedAddresses = List.<Address>of();
         VehicleType vehicleType = null;
         CourierAvailability courierAvailability = null;
+        String courierTransferId = null;
         String restaurantId = null;
 
         if (user instanceof CustomerUser customerUser) {
@@ -33,6 +34,7 @@ public class UserDtoMapper {
         } else if (user instanceof CourierUser courierUser) {
             vehicleType = courierUser.getVehicleType();
             courierAvailability = courierUser.getCourierAvailability();
+            courierTransferId = courierUser.getCourierTransferId();
         } else if (user instanceof RestaurantUser restaurantUser) {
             restaurantId = restaurantUser.getRestaurantId() == null
                 ? null : restaurantUser.getRestaurantId().toString();
@@ -47,6 +49,7 @@ public class UserDtoMapper {
             savedAddresses,
             vehicleType,
             courierAvailability,
+            courierTransferId,
             restaurantId);
     }
 

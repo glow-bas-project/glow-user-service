@@ -13,6 +13,9 @@ public class CourierUserJpaEntity extends UserJpaEntity {
     @Column(name = "courier_availability")
     private String courierAvailability;
 
+    @Column(name = "courier_transfer_id")
+    private String courierTransferId;
+
     @Column(name = "stripe_account_id")
     private String stripeAccountId;
 
@@ -36,6 +39,14 @@ public class CourierUserJpaEntity extends UserJpaEntity {
 
     public void setCourierAvailability(String courierAvailability) {
         this.courierAvailability = courierAvailability;
+    }
+
+    public String getCourierTransferId() {
+        return courierTransferId;
+    }
+
+    public void setCourierTransferId(String courierTransferId) {
+        this.courierTransferId = courierTransferId;
     }
 
     public String getStripeAccountId() {
