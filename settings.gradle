@@ -1,11 +1,35 @@
 pluginManagement {
+    def glowGradleProps = new Properties()
+    def propsFile = new File(settingsDir, 'gradle.properties')
+    if (propsFile.exists()) {
+        propsFile.withInputStream { glowGradleProps.load(it) }
+    }
+
+    def isLocal = !System.getenv('CI')
+
     repositories {
+        if (isLocal) {
+            def glowMavenUrl = glowGradleProps.getProperty('glowGradlePluginMavenUrl')
+            if (glowMavenUrl) {
+                maven {
+                    name = 'GlowGradlePlugin'
+                    url = uri(glowMavenUrl)
+                    credentials {
+                        username = System.getenv('GLOW_GITLAB_USER') ?: ''
+                        password = System.getenv('GLOW_GITLAB_TOKEN') ?: ''
+                    }
+                }
+            }
+        }
         mavenCentral()
         gradlePluginPortal()
         mavenLocal()
     }
     plugins {
-        id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+        id glowGradleProps.getProperty('quarkusPluginId') version glowGradleProps.getProperty('quarkusPluginVersion')
+        if (isLocal) {
+            id 'com.glow.local-env' version (glowGradleProps.getProperty('glowGradlePluginVersion') ?: '1.0.0')
+        }
     }
 }
-rootProject.name='user-service'
+rootProject.name = 'glow-user-service'
