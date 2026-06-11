@@ -2,10 +2,11 @@ plugins {
     id 'java'
     id 'io.quarkus'
     id 'maven-publish'
+    id 'com.glow.local-env' apply false
 }
 
 if (!System.getenv('CI')) {
-    apply plugin: 'com.glow.local-env'
+    plugins.apply('com.glow.local-env')
 }
 
 repositories {

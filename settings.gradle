@@ -5,16 +5,17 @@ pluginManagement {
         propsFile.withInputStream { glowGradleProps.load(it) }
     }
 
-    def isLocal = !System.getenv('CI')
-
     repositories {
-        if (isLocal) {
-            def glowMavenUrl = glowGradleProps.getProperty('glowGradlePluginMavenUrl')
-            if (glowMavenUrl) {
-                maven {
-                    name = 'GlowGradlePlugin'
-                    url = uri(glowMavenUrl)
-                    credentials {
+        def glowMavenUrl = glowGradleProps.getProperty('glowGradlePluginMavenUrl')
+        if (glowMavenUrl) {
+            maven {
+                name = 'GlowGradlePlugin'
+                url = uri(glowMavenUrl)
+                credentials {
+                    if (System.getenv('CI')) {
+                        username = 'gitlab-ci-token'
+                        password = System.getenv('CI_JOB_TOKEN') ?: ''
+                    } else {
                         username = System.getenv('GLOW_GITLAB_USER') ?: ''
                         password = System.getenv('GLOW_GITLAB_TOKEN') ?: ''
                     }
@@ -27,9 +28,7 @@ pluginManagement {
     }
     plugins {
         id glowGradleProps.getProperty('quarkusPluginId') version glowGradleProps.getProperty('quarkusPluginVersion')
-        if (isLocal) {
-            id 'com.glow.local-env' version (glowGradleProps.getProperty('glowGradlePluginVersion') ?: '1.0.0')
-        }
+        id 'com.glow.local-env' version (glowGradleProps.getProperty('glowGradlePluginVersion') ?: '1.0.0')
     }
 }
 rootProject.name = 'glow-user-service'
