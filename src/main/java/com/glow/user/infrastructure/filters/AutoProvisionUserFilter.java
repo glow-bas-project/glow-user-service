@@ -1,6 +1,7 @@
 package com.glow.user.infrastructure.filters;
 
 import com.glow.user.application.services.UserService;
+import com.glow.user.domain.model.Permission;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -11,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Provider
 @Priority(1000)
@@ -45,10 +49,41 @@ public class AutoProvisionUserFilter implements ContainerRequestFilter {
             }
 
             if (email != null) {
-                userService.ensureUserExists(keycloakSubject, email);
+                userService.ensureUserExists(keycloakSubject, email, resolvePermissions());
             }
         } catch (Exception e) {
             LOG.warn("Failed to auto-provision user from JWT: {}", e.getMessage());
         }
+    }
+
+    private List<Permission> resolvePermissions() {
+        Object realmAccess = jwt.getClaim("realm_access");
+        if (!(realmAccess instanceof Map<?, ?> realmAccessMap)) {
+            return List.of(Permission.CUSTOMER);
+        }
+
+        Object rolesClaim = realmAccessMap.get("roles");
+        if (!(rolesClaim instanceof Iterable<?> roles)) {
+            return List.of(Permission.CUSTOMER);
+        }
+
+        List<Permission> permissions = new ArrayList<>();
+        for (Object role : roles) {
+            if (role == null) {
+                continue;
+            }
+
+            try {
+                permissions.add(Permission.valueOf(role.toString()));
+            } catch (IllegalArgumentException ignored) {
+                // Ignore Keycloak realm roles that do not map to glow-user permissions.
+            }
+        }
+
+        if (permissions.isEmpty()) {
+            permissions.add(Permission.CUSTOMER);
+        }
+
+        return List.copyOf(permissions);
     }
 }
