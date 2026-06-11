@@ -1,6 +1,6 @@
 include:
   - project: "backend-architecture-and-scalability/glow-devops"
-    ref: "ci/v1.0.9"
+    ref: "ci/v1.0.12"
     file: "/.gitlab/ci/entry/service-pipeline.yml"
 
 stages:
