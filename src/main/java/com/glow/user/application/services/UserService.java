@@ -35,6 +35,10 @@ public class UserService {
     }
 
     public void ensureUserExists(String keycloakSubject, String email) {
+        ensureUserExists(keycloakSubject, email, List.of());
+    }
+
+    public void ensureUserExists(String keycloakSubject, String email, List<Permission> permissions) {
         if (email == null || email.isBlank()) {
             return;
         }
@@ -54,7 +58,7 @@ public class UserService {
             .name(email)
             .email(email)
             .phoneNumber(null)
-            .permissions(List.of())
+            .permissions(permissions == null ? List.of() : permissions)
             .build();
 
         userRepository.save(user);
@@ -191,6 +195,13 @@ public class UserService {
         }
 
         return User.builder();
+    }
+
+    public UserDto findByKeycloakId(String keycloakSubject) {
+        var keycloakId = resolveKeycloakId(keycloakSubject);
+        return userRepository.findByKeycloakId(keycloakId.toString())
+            .map(mapper::toDto)
+            .orElseThrow(() -> new NotFoundException("No profile found for current user"));
     }
 
     public UserDto findById(String id) {

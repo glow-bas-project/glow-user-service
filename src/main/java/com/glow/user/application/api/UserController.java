@@ -38,6 +38,13 @@ public class UserController {
         return RestResponse.ok("glow-user-service is running");
     }
 
+    @GET
+    @Path("me")
+    @Authenticated
+    public RestResponse<UserDto> getMe() {
+        return RestResponse.ok(service.findByKeycloakId(jwt.getSubject()));
+    }
+
     @POST
     @Path("sync-profile")
     @Authenticated
