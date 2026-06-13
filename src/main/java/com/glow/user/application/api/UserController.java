@@ -10,6 +10,7 @@ import com.glow.user.application.model.UserDto;
 import com.glow.user.application.services.UserService;
 import com.glow.user.domain.shared.GlowRoles;
 import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.*;
@@ -26,10 +27,12 @@ public class UserController {
 
     private final UserService service;
     private final JsonWebToken jwt;
+    private final SecurityIdentity identity;
 
-    public UserController(UserService service, JsonWebToken jwt) {
+    public UserController(UserService service, JsonWebToken jwt, SecurityIdentity identity) {
         this.service = service;
         this.jwt = jwt;
+        this.identity = identity;
     }
 
     @GET
@@ -67,28 +70,28 @@ public class UserController {
     }
 
     @POST
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @RolesAllowed(GlowRoles.SYSADMIN)
     public RestResponse<UserDto> createUser(CreateUserRequest request) {
         return RestResponse.ok(service.createUser(request, jwt.getSubject()));
     }
 
     @GET
     @Path("{id}")
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @RolesAllowed(GlowRoles.SYSADMIN)
     public RestResponse<UserDto> findById(@PathParam("id") String id) {
         return RestResponse.ok(service.findById(id));
     }
 
     @PUT
     @Path("{id}")
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @Authenticated
     public RestResponse<UserDto> updateById(@PathParam("id") String id, UpdateUserRequest request) {
-        return RestResponse.ok(service.updateUser(id, request));
+        return RestResponse.ok(service.updateUser(id, request, jwt.getSubject(), identity.hasRole(GlowRoles.SYSADMIN)));
     }
 
     @POST
     @Path("find")
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @RolesAllowed(GlowRoles.SYSADMIN)
     public RestResponse<FindUserIdsResponse> findUsers(FindUserIdsRequest request) {
         var result = service.findUserIds(request.size(), request.page());
 
@@ -100,16 +103,16 @@ public class UserController {
 
     @POST
     @Path("materialise")
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @RolesAllowed(GlowRoles.SYSADMIN)
     public RestResponse<List<UserDto>> materialiseUsers(MaterialiseUsersByIdsRequest request) {
         return RestResponse.ok(service.materialise(request.ids()));
     }
 
     @DELETE
     @Path("{id}")
-    @RolesAllowed({GlowRoles.CUSTOMER, GlowRoles.COURIER, GlowRoles.RESTAURANT_USER, GlowRoles.SYSADMIN})
+    @Authenticated
     public RestResponse<Void> deleteById(@PathParam("id") String id) {
-        boolean deleted = service.deleteUserById(id);
-        return deleted ? RestResponse.noContent() : RestResponse.status(RestResponse.Status.NOT_FOUND);
+        service.deleteUserById(id, jwt.getSubject(), identity.hasRole(GlowRoles.SYSADMIN));
+        return RestResponse.noContent();
     }
 }

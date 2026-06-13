@@ -12,6 +12,7 @@ import com.glow.user.domain.repository.UserRepository;
 import com.glow.user.domain.shared.DomainException;
 import com.glow.user.domain.shared.DomainPrecondition;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 
 import java.time.Instant;
@@ -210,9 +211,19 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User with id " + id + " not found")));
     }
 
-    public UserDto updateUser(String id, UpdateUserRequest request) {
+    public UserDto updateUser(String id, UpdateUserRequest request, String keycloakSubject, boolean isSysAdmin) {
         var existing = userRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+
+        var callerKeycloakId = resolveKeycloakId(keycloakSubject);
+
+        if (!isSysAdmin && !existing.getKeycloakId().equals(callerKeycloakId)) {
+            throw new ForbiddenException("You are not allowed to update this user");
+        }
+
+        if (!isSysAdmin && request.permissions() != null) {
+            throw new ForbiddenException("Only SYSADMIN can modify permissions");
+        }
 
         var permissions = request.permissions() == null ? existing.getPermissions() : request.permissions();
         validatePermissionCombination(permissions);
@@ -244,7 +255,16 @@ public class UserService {
             .toList();
     }
 
-    public boolean deleteUserById(String id) {
-        return userRepository.deleteById(id);
+    public void deleteUserById(String id, String keycloakSubject, boolean isSysAdmin) {
+        var existing = userRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
+
+        var callerKeycloakId = resolveKeycloakId(keycloakSubject);
+
+        if (!isSysAdmin && !existing.getKeycloakId().equals(callerKeycloakId)) {
+            throw new ForbiddenException("You are not allowed to delete this user");
+        }
+
+        userRepository.deleteById(id);
     }
 }
